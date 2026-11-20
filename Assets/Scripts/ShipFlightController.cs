@@ -4,14 +4,25 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 /// <summary>
+/// Guarda la dificultad, velocidad y multiplicador de puntos elegidos en el Hangar.
+/// </summary>
+public static class GameSettingsData
+{
+    public static string difficultyName = "NORMAL";
+    public static float selectedForwardSpeed = 15f;
+    public static float scoreMultiplier = 1.0f;
+}
+
+/// <summary>
 /// Controla el avance constante sobre el riel (eje Z) y la esquiva lateral/vertical (ejes X/Y)
-/// mediante movimiento kinemático físico (rb.MovePosition) para evitar bloqueos con objetos hijos.
+/// mediante movimiento kinemático físico (rb.MovePosition).
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ShipFlightController : MonoBehaviour
 {
     [Header("Avance en Riel (Eje Z)")]
-    public float forwardSpeed = 30f;
+    public bool useSelectedDifficultySpeed = true;
+    public float forwardSpeed = 15f;
     public bool isBossPhase = false;
 
     [Header("Maniobra Evasiva (Ejes X / Y)")]
@@ -23,21 +34,24 @@ public class ShipFlightController : MonoBehaviour
     public XRBaseInteractable joystickInteractable;
     public Transform joystickPivot;
     public float maxTiltAngle = 28f;
-    [Tooltip("Distancia en metros desde el agarre para alcanzar el 100% de movimiento.")]
     public float handSensitivityRadius = 0.08f;
     public float deadzone = 0.012f;
 
     [Header("Referencias Visuales de Velocidad (Prototipo)")]
     public bool spawnTunnelMarkers = true;
+    public float markerSpacingZ = 25f;
+    public float markerLookAheadZ = 120f;
     public bool enableKeyboardDebug = true;
 
     private Rigidbody rb;
-    private Vector2 targetInput;   // X = Izquierda/Derecha, Y = Subir/Bajar
+    private Vector2 targetInput;
     private Vector2 smoothedInput;
     private Vector3 startPosition;
     private Vector3 grabOriginLocal;
     private bool wasGrabbed = false;
-    private float nextMarkerZ = 40f;
+    private float nextMarkerZ = 20f;
+
+    public float CurrentForwardSpeed => isBossPhase ? forwardSpeed * 0.5f : forwardSpeed;
 
     private void Awake()
     {
@@ -47,7 +61,14 @@ public class ShipFlightController : MonoBehaviour
         startPosition = transform.position;
     }
 
-    // Update lee únicamente los inputs del mando VR y actualiza la rotación visual del joystick
+    private void Start()
+    {
+        if (useSelectedDifficultySpeed)
+        {
+            forwardSpeed = GameSettingsData.selectedForwardSpeed;
+        }
+    }
+
     private void Update()
     {
         ReadFlightInput();
@@ -55,17 +76,14 @@ public class ShipFlightController : MonoBehaviour
         UpdateTunnelMarkers();
     }
 
-    // FixedUpdate desplaza la nave sobre el riel de forma determinista y sin bloqueos físicos
     private void FixedUpdate()
     {
         smoothedInput = Vector2.Lerp(smoothedInput, targetInput, Time.fixedDeltaTime * 10f);
 
-        float currentZSpeed = isBossPhase ? forwardSpeed * 0.5f : forwardSpeed;
-
         Vector3 displacement = new Vector3(
             smoothedInput.x * strafeSpeed * Time.fixedDeltaTime,
             smoothedInput.y * strafeSpeed * Time.fixedDeltaTime,
-            currentZSpeed * Time.fixedDeltaTime
+            CurrentForwardSpeed * Time.fixedDeltaTime
         );
 
         Vector3 nextPos = rb.position + displacement;
@@ -79,7 +97,6 @@ public class ShipFlightController : MonoBehaviour
     {
         targetInput = Vector2.zero;
 
-        // 1. Lectura relativa al punto exacto donde la mano izquierda agarra el joystick
         if (joystickInteractable != null && joystickInteractable.isSelected && joystickInteractable.firstInteractorSelecting != null)
         {
             Transform handTransform = joystickInteractable.firstInteractorSelecting.transform;
@@ -93,11 +110,9 @@ public class ShipFlightController : MonoBehaviour
 
             Vector3 handDelta = currentHandLocal - grabOriginLocal;
 
-            // Izquierda / Derecha (eje X)
             float rawX = Mathf.Abs(handDelta.x) < deadzone ? 0f : handDelta.x;
             targetInput.x = Mathf.Clamp(rawX / handSensitivityRadius, -1f, 1f);
 
-            // Empujar adelante (+Z) = Subir (+Y) | Tirar hacia atrás (-Z) = Bajar (-Y)
             float rawZ = Mathf.Abs(handDelta.z) < deadzone ? 0f : handDelta.z;
             targetInput.y = Mathf.Clamp(rawZ / handSensitivityRadius, -1f, 1f);
 
@@ -110,7 +125,6 @@ public class ShipFlightController : MonoBehaviour
         {
             wasGrabbed = false;
 
-            // 2. Respaldo con teclado (Unity 6 Input System)
             if (enableKeyboardDebug && Keyboard.current != null)
             {
                 if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) targetInput.x -= 1f;
@@ -133,20 +147,23 @@ public class ShipFlightController : MonoBehaviour
     {
         if (!spawnTunnelMarkers) return;
 
-        while (transform.position.z + 240f > nextMarkerZ)
+        float activeSpeed = Mathf.Max(CurrentForwardSpeed, 2f);
+        float dynamicLifetime = (markerLookAheadZ + 30f) / activeSpeed;
+
+        while (transform.position.z + markerLookAheadZ > nextMarkerZ)
         {
-            CreatePillar(new Vector3(startPosition.x - 15f, startPosition.y + 2f, nextMarkerZ));
-            CreatePillar(new Vector3(startPosition.x + 15f, startPosition.y + 2f, nextMarkerZ));
-            nextMarkerZ += 40f;
+            CreatePillar(new Vector3(startPosition.x - 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+            CreatePillar(new Vector3(startPosition.x + 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+            nextMarkerZ += markerSpacingZ;
         }
     }
 
-    private void CreatePillar(Vector3 pos)
+    private void CreatePillar(Vector3 pos, float lifetime)
     {
         GameObject pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
         Destroy(pillar.GetComponent<Collider>());
         pillar.transform.position = pos;
         pillar.transform.localScale = new Vector3(1.2f, 18f, 1.2f);
-        Destroy(pillar, 12f);
+        Destroy(pillar, lifetime);
     }
 }

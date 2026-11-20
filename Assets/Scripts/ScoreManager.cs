@@ -2,8 +2,8 @@ using UnityEngine;
 using TMPro;
 
 /// <summary>
-/// Gestiona el puntaje, multiplicador de combo x1-x5, integridad del casco/escudo
-/// y el HUD diegético en cabina con colores dinámicos según alerta o potenciador.
+/// Gestiona el puntaje (con multiplicador de combo y dificultad), integridad del escudo
+/// y cálculo del rango final (F a SS).
 /// </summary>
 public class ScoreManager : MonoBehaviour
 {
@@ -65,7 +65,9 @@ public class ScoreManager : MonoBehaviour
             comboMultiplier = Mathf.Clamp(1 + (consecutiveHits / 3), 1, 5);
         }
 
-        currentScore += basePoints * comboMultiplier;
+        float diffMult = GameSettingsData.scoreMultiplier;
+        int earned = Mathf.RoundToInt(basePoints * comboMultiplier * diffMult);
+        currentScore += earned;
         UpdateHUD();
     }
 
@@ -100,19 +102,25 @@ public class ScoreManager : MonoBehaviour
     public void UpdateHUD()
     {
         if (scoreText != null) scoreText.text = $"PUNTOS: {currentScore:N0}";
-        if (comboText != null) comboText.text = $"COMBO: x{comboMultiplier}";
+        if (comboText != null) comboText.text = $"COMBO: x{comboMultiplier} ({GameSettingsData.scoreMultiplier:0.##}x)";
         if (healthText != null) healthText.text = $"ESCUDO: {currentHealth}%";
     }
 
     public string CalculateFinalRank()
     {
-        int finalTotal = currentScore + (currentHealth * 15);
-        if (finalTotal >= 14000) return "SS";
-        if (finalTotal >= 11000) return "S";
-        if (finalTotal >= 8500) return "A";
-        if (finalTotal >= 6000) return "B";
-        if (finalTotal >= 3500) return "C";
-        if (finalTotal >= 1500) return "D";
-        return "F";
+        float accuracy = totalShotsFired > 0 ? ((float)totalShotsHit / totalShotsFired) * 100f : 0f;
+        DiegeticWeapon weapon = FindFirstObjectByType<DiegeticWeapon>();
+        int recharges = weapon != null ? weapon.RechargesCount : 0;
+
+        int accuracyBonus = Mathf.RoundToInt(accuracy * 25f);
+        int shieldBonus = currentHealth * 15;
+        int rechargePenalty = Mathf.Min(recharges * 250, 2000);
+        int finalEvaluation = currentScore + accuracyBonus + shieldBonus - rechargePenalty;
+
+        if (finalEvaluation >= 22000) return "SS";
+        if (finalEvaluation >= 15500) return "S";
+        if (finalEvaluation >= 11000) return "A";
+        if (finalEvaluation >= 7500) return "B";
+        return "C";
     }
 }

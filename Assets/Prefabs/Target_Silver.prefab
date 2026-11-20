@@ -128,9 +128,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
   objectiveType: 1
-  basePoints: 250
+  basePoints: 1000
   maxHealth: 1
   hullDamageOnCrash: 20
+  ephemeralDurationInRange: 0
+  activationDistanceZ: 45
   oscillate: 1
   moveAxis: {x: 1, y: 0, z: 0}
   moveAmplitude: 2.5

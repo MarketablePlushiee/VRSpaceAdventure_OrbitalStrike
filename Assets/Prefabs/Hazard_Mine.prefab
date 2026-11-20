@@ -128,7 +128,9 @@ MonoBehaviour:
   objectiveType: 4
   basePoints: 150
   maxHealth: 1
-  hullDamageOnCrash: 20
+  hullDamageOnCrash: 25
+  ephemeralDurationInRange: 0
+  activationDistanceZ: 45
   oscillate: 0
   moveAxis: {x: 1, y: 0, z: 0}
   moveAmplitude: 2.5

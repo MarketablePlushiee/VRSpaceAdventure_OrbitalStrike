@@ -5,8 +5,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 /// <summary>
-/// Gestiona el disparo 6DOF, cargador base de 5 balas, fila superior temporal de 5 LEDs
-/// para cargador expandido, reembolso por acierto y recarga física en estación.
+/// Gestiona el disparo 6DOF con salida adelantada fuera de la cabina,
+/// cargador base de 5 balas, fila superior temporal de 5 LEDs y recarga física.
 /// </summary>
 public class DiegeticWeapon : MonoBehaviour
 {
@@ -16,12 +16,21 @@ public class DiegeticWeapon : MonoBehaviour
     private int currentAmmo;
     private bool isLocked = false;
 
+    [Header("Acoplamiento Automático en Base")]
+    public bool returnToDockWhenReleased = true;
+    public float returnSpeed = 8f;
+    private Vector3 initialLocalPosition;
+    private Quaternion initialLocalRotation;
+
     [Header("Disparo y Proyectiles")]
     public GameObject bulletPrefab;
     public Transform muzzlePoint;
-    public float bulletSpeed = 90f;
+    [Tooltip("Distancia adelantada desde el cañón para que la bala nazca fuera de la cabina.")]
+    public float muzzleForwardOffset = 1.1f;
+    public float bulletSpeed = 160f;
     public float fireCooldown = 0.15f;
     private float lastFireTime;
+    private float lastRechargeTime = -2f;
 
     [Header("Potenciadores Activos")]
     public bool hasTripleShot = false;
@@ -29,9 +38,7 @@ public class DiegeticWeapon : MonoBehaviour
     public bool hasHomingShot = false;
 
     [Header("Indicadores LED Físicos")]
-    [Tooltip("Fila principal de 5 LEDs en el arma.")]
     public Renderer[] ammoLeds;
-    [Tooltip("Fila superior de 5 LEDs que aparece solo con Cargador Expandido.")]
     public Renderer[] extraAmmoLeds;
     public Color availableColor = Color.green;
     public Color emptyColor = Color.red;
@@ -42,6 +49,7 @@ public class DiegeticWeapon : MonoBehaviour
     public AudioClip emptyLockClip;
     public AudioClip rechargeClip;
     private XRGrabInteractable grabInteractable;
+    private ShipFlightController shipFlight;
 
     [Header("Prueba en Editor (Sin Visor VR)")]
     public bool enableMouseDebug = true;
@@ -51,6 +59,12 @@ public class DiegeticWeapon : MonoBehaviour
     private void Awake()
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
+        shipFlight = GetComponentInParent<ShipFlightController>();
+        if (shipFlight == null) shipFlight = FindFirstObjectByType<ShipFlightController>();
+
+        initialLocalPosition = transform.localPosition;
+        initialLocalRotation = transform.localRotation;
+
         currentMaxAmmo = baseMagazineSize;
         currentAmmo = currentMaxAmmo;
         UpdateAmmoLeds();
@@ -70,6 +84,12 @@ public class DiegeticWeapon : MonoBehaviour
 
     private void Update()
     {
+        if (returnToDockWhenReleased && grabInteractable != null && !grabInteractable.isSelected)
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, initialLocalPosition, Time.deltaTime * returnSpeed);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, initialLocalRotation, Time.deltaTime * returnSpeed);
+        }
+
         if (enableMouseDebug)
         {
             if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) TryFire();
@@ -97,7 +117,6 @@ public class DiegeticWeapon : MonoBehaviour
 
         currentAmmo--;
 
-        // Si tenía cargador expandido y ya gastó las 5 balas extra, vuelve a 5 y oculta los LEDs superiores
         if (currentMaxAmmo > baseMagazineSize && currentAmmo <= baseMagazineSize)
         {
             currentMaxAmmo = baseMagazineSize;
@@ -112,8 +131,8 @@ public class DiegeticWeapon : MonoBehaviour
         SpawnProjectile(muzzlePoint.rotation);
         if (hasTripleShot)
         {
-            SpawnProjectile(muzzlePoint.rotation * Quaternion.Euler(0f, -6f, 0f));
-            SpawnProjectile(muzzlePoint.rotation * Quaternion.Euler(0f, 6f, 0f));
+            SpawnProjectile(muzzlePoint.rotation * Quaternion.Euler(0f, -5f, 0f));
+            SpawnProjectile(muzzlePoint.rotation * Quaternion.Euler(0f, 5f, 0f));
         }
 
         PlaySound(shootClip, Random.Range(0.95f, 1.05f));
@@ -125,22 +144,46 @@ public class DiegeticWeapon : MonoBehaviour
     {
         if (bulletPrefab == null || muzzlePoint == null) return;
 
-        GameObject proj = Instantiate(bulletPrefab, muzzlePoint.position, rotation);
+        Vector3 aimDir = rotation * Vector3.forward;
+        // Nace 1.10 m por delante del cañón para salir despejada de la cabina a cualquier velocidad
+        Vector3 spawnPos = muzzlePoint.position + (aimDir * muzzleForwardOffset);
+
+        GameObject proj = Instantiate(bulletPrefab, spawnPos, rotation);
+
+        // Ignorar colisiones físicas entre la bala y cualquier pieza de la nave/cabina
+        Collider bulletCol = proj.GetComponent<Collider>();
+        if (bulletCol != null)
+        {
+            bulletCol.isTrigger = true;
+            if (shipFlight != null)
+            {
+                foreach (Collider shipCol in shipFlight.GetComponentsInChildren<Collider>())
+                {
+                    Physics.IgnoreCollision(bulletCol, shipCol, true);
+                }
+            }
+        }
+
         LaserProjectile laser = proj.GetComponent<LaserProjectile>();
         if (laser != null)
         {
+            laser.ownerWeapon = this;
+            laser.ignoredRoot = shipFlight != null ? shipFlight.transform : null;
             laser.isPiercing = hasPiercingShot;
             laser.isHoming = hasHomingShot;
         }
 
+        float shipSpeedZ = shipFlight != null ? shipFlight.CurrentForwardSpeed : 0f;
+        Vector3 finalVelocity = (aimDir * bulletSpeed) + (Vector3.forward * shipSpeedZ);
+
         Rigidbody projRb = proj.GetComponent<Rigidbody>();
         if (projRb != null)
         {
-            projRb.linearVelocity = (rotation * Vector3.forward) * bulletSpeed;
+            projRb.linearVelocity = finalVelocity;
         }
 
         ScoreManager.Instance?.RegisterShotFired();
-        Destroy(proj, 3f);
+        Destroy(proj, 2.5f);
     }
 
     public void RefundAmmo()
@@ -155,6 +198,12 @@ public class DiegeticWeapon : MonoBehaviour
 
     public void RechargeWeapon()
     {
+        if (Time.time - lastRechargeTime < 0.8f) return;
+
+        bool needsRecharge = isLocked || currentAmmo < currentMaxAmmo;
+        if (!needsRecharge) return;
+
+        lastRechargeTime = Time.time;
         currentMaxAmmo = baseMagazineSize;
         currentAmmo = currentMaxAmmo;
         isLocked = false;
@@ -179,7 +228,7 @@ public class DiegeticWeapon : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("ChargingStation"))
+        if (other.CompareTag("ChargingStation") && (grabInteractable == null || grabInteractable.isSelected))
         {
             RechargeWeapon();
         }
