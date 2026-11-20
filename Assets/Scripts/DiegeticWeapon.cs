@@ -5,8 +5,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 /// <summary>
-/// Gestiona el disparo 6DOF, el cargador de 5 balas, reembolso por acierto,
-/// bloqueo tras 5 fallos seguidos, recarga física en estación y los 5 LEDs traseros.
+/// Gestiona el disparo 6DOF, cargador base de 5 balas, fila superior temporal de 5 LEDs
+/// para cargador expandido, reembolso por acierto y recarga física en estación.
 /// </summary>
 public class DiegeticWeapon : MonoBehaviour
 {
@@ -28,8 +28,11 @@ public class DiegeticWeapon : MonoBehaviour
     public bool hasPiercingShot = false;
     public bool hasHomingShot = false;
 
-    [Header("Indicadores LED Físicos (5 esferas en el arma)")]
+    [Header("Indicadores LED Físicos")]
+    [Tooltip("Fila principal de 5 LEDs en el arma.")]
     public Renderer[] ammoLeds;
+    [Tooltip("Fila superior de 5 LEDs que aparece solo con Cargador Expandido.")]
+    public Renderer[] extraAmmoLeds;
     public Color availableColor = Color.green;
     public Color emptyColor = Color.red;
 
@@ -93,6 +96,13 @@ public class DiegeticWeapon : MonoBehaviour
         }
 
         currentAmmo--;
+
+        // Si tenía cargador expandido y ya gastó las 5 balas extra, vuelve a 5 y oculta los LEDs superiores
+        if (currentMaxAmmo > baseMagazineSize && currentAmmo <= baseMagazineSize)
+        {
+            currentMaxAmmo = baseMagazineSize;
+        }
+
         if (currentAmmo <= 0)
         {
             currentAmmo = 0;
@@ -116,11 +126,20 @@ public class DiegeticWeapon : MonoBehaviour
         if (bulletPrefab == null || muzzlePoint == null) return;
 
         GameObject proj = Instantiate(bulletPrefab, muzzlePoint.position, rotation);
+        LaserProjectile laser = proj.GetComponent<LaserProjectile>();
+        if (laser != null)
+        {
+            laser.isPiercing = hasPiercingShot;
+            laser.isHoming = hasHomingShot;
+        }
+
         Rigidbody projRb = proj.GetComponent<Rigidbody>();
         if (projRb != null)
         {
             projRb.linearVelocity = (rotation * Vector3.forward) * bulletSpeed;
         }
+
+        ScoreManager.Instance?.RegisterShotFired();
         Destroy(proj, 3f);
     }
 
@@ -168,12 +187,30 @@ public class DiegeticWeapon : MonoBehaviour
 
     private void UpdateAmmoLeds()
     {
-        if (ammoLeds == null) return;
-        for (int i = 0; i < ammoLeds.Length; i++)
+        bool showExtraRow = currentMaxAmmo > baseMagazineSize;
+
+        if (ammoLeds != null)
         {
-            if (ammoLeds[i] == null) continue;
-            bool lit = currentAmmo > i;
-            ammoLeds[i].material.color = lit ? availableColor : emptyColor;
+            for (int i = 0; i < ammoLeds.Length; i++)
+            {
+                if (ammoLeds[i] == null) continue;
+                bool lit = currentAmmo > i;
+                ammoLeds[i].material.color = lit ? availableColor : emptyColor;
+            }
+        }
+
+        if (extraAmmoLeds != null)
+        {
+            for (int i = 0; i < extraAmmoLeds.Length; i++)
+            {
+                if (extraAmmoLeds[i] == null) continue;
+                extraAmmoLeds[i].gameObject.SetActive(showExtraRow);
+                if (showExtraRow)
+                {
+                    bool lit = currentAmmo > (baseMagazineSize + i);
+                    extraAmmoLeds[i].material.color = lit ? availableColor : emptyColor;
+                }
+            }
         }
     }
 
