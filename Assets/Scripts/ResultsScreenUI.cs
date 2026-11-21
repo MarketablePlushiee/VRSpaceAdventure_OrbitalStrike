@@ -25,7 +25,8 @@ public class ResultsScreenUI : MonoBehaviour
                 $"PUNTAJE FINAL: {MatchResultsData.finalScore:N0}\n" +
                 $"DIANAS DESTRUIDAS: {MatchResultsData.targetsDestroyed}\n" +
                 $"PRECISIÓN DE TIRO: {MatchResultsData.accuracyPercent:F1}%\n" +
-                $"ESCUDO RESTANTE: {MatchResultsData.shieldRemaining}%";
+                $"RECARGAS REALIZADAS: {MatchResultsData.rechargesCount}\n" +
+                $"CASCO RESTANTE: {MatchResultsData.shieldRemaining}%";
         }
     }
 }

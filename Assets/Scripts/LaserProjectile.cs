@@ -1,35 +1,46 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Proyectil láser con detección continua SphereCast (ignorando la propia cabina),
-/// soporte para Disparo Perforante y Disparo Teledirigido.
-/// </summary>
 public class LaserProjectile : MonoBehaviour
 {
     [HideInInspector] public DiegeticWeapon ownerWeapon;
     [HideInInspector] public Transform ignoredRoot;
+    [HideInInspector] public Transform softAssistTarget;
     public bool isPiercing = false;
     public bool isHoming = false;
-    public float homingTurnSpeed = 8f;
-    public float homingSearchRadius = 25f;
-    public float hitRadius = 0.25f;
+
+    [Header("Ajustes de Teledirigido (Power-Up)")]
+    public float homingTurnRadiansPerSec = 14f;
+    public float homingSearchRadius = 90f;
+    public float magnetSnapRadius = 2.2f;
+    public float hitRadius = 0.3f;
 
     private Rigidbody rb;
     private Vector3 lastPosition;
-    private readonly HashSet<TargetObjective> hitTargets = new HashSet<TargetObjective>();
+    private readonly HashSet<Component> hitTargets = new HashSet<Component>();
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        }
         lastPosition = transform.position;
     }
 
     private void FixedUpdate()
     {
-        if (isHoming && rb != null)
+        if (rb != null)
         {
-            SteerTowardNearestTarget();
+            if (isHoming)
+            {
+                SteerTowardNearestTarget();
+            }
+            else if (softAssistTarget != null && softAssistTarget.gameObject.activeInHierarchy)
+            {
+                ApplySubtleAimAssist();
+            }
         }
 
         Vector3 step = transform.position - lastPosition;
@@ -52,6 +63,28 @@ public class LaserProjectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         ProcessHitCollider(other);
+    }
+
+    private void ApplySubtleAimAssist()
+    {
+        Vector3 toTarget = softAssistTarget.position - transform.position;
+        float dist = toTarget.magnitude;
+        float speed = rb.linearVelocity.magnitude;
+        if (speed < 0.1f || dist < 0.05f) return;
+
+        // Corrección suave en vuelo si el objetivo se desplaza levemente
+        Vector3 currentDir = rb.linearVelocity / speed;
+        if (Vector3.Dot(currentDir, toTarget / dist) > 0.85f)
+        {
+            Vector3 newDir = Vector3.RotateTowards(currentDir, toTarget / dist, 2.2f * Time.fixedDeltaTime, 0f);
+            rb.linearVelocity = newDir * speed;
+            transform.rotation = Quaternion.LookRotation(newDir);
+
+            if (dist <= 0.9f)
+            {
+                rb.MovePosition(Vector3.MoveTowards(transform.position, softAssistTarget.position, speed * Time.fixedDeltaTime));
+            }
+        }
     }
 
     private bool ProcessHitCollider(Collider other)
@@ -78,6 +111,27 @@ public class LaserProjectile : MonoBehaviour
                 Destroy(gameObject);
                 return true;
             }
+            return false;
+        }
+
+        BossCore core = other.GetComponentInParent<BossCore>();
+        if (core != null && !core.IsDestroyed && !hitTargets.Contains(core))
+        {
+            hitTargets.Add(core);
+            core.TakeCoreDamage(50, ownerWeapon);
+
+            if (!isPiercing)
+            {
+                Destroy(gameObject);
+                return true;
+            }
+            return false;
+        }
+
+        if (!other.isTrigger)
+        {
+            Destroy(gameObject);
+            return true;
         }
 
         return false;
@@ -85,10 +139,15 @@ public class LaserProjectile : MonoBehaviour
 
     private void SteerTowardNearestTarget()
     {
-        TargetObjective[] allTargets = FindObjectsByType<TargetObjective>(FindObjectsSortMode.None);
-        TargetObjective best = null;
+        Transform bestTarget = null;
         float bestDist = homingSearchRadius;
+        Vector3 currentVel = rb.linearVelocity;
+        float speed = currentVel.magnitude;
+        if (speed < 0.1f) return;
 
+        Vector3 currentDir = currentVel / speed;
+
+        TargetObjective[] allTargets = FindObjectsByType<TargetObjective>(FindObjectsSortMode.None);
         foreach (TargetObjective t in allTargets)
         {
             if (t == null || t.objectiveType == TargetObjective.ObjectiveType.Asteroid || hitTargets.Contains(t))
@@ -96,20 +155,42 @@ public class LaserProjectile : MonoBehaviour
 
             Vector3 toTarget = t.transform.position - transform.position;
             float d = toTarget.magnitude;
-            if (d < bestDist && Vector3.Dot(transform.forward, toTarget.normalized) > 0.35f)
+            if (d < bestDist && Vector3.Dot(currentDir, toTarget.normalized) > 0.1f)
             {
                 bestDist = d;
-                best = t;
+                bestTarget = t.transform;
             }
         }
 
-        if (best != null)
+        if (bestTarget == null)
         {
-            Vector3 desiredDir = (best.transform.position - transform.position).normalized;
-            float speed = rb.linearVelocity.magnitude;
-            Vector3 newDir = Vector3.Slerp(rb.linearVelocity.normalized, desiredDir, Time.fixedDeltaTime * homingTurnSpeed);
+            BossCore[] activeCores = FindObjectsByType<BossCore>(FindObjectsSortMode.None);
+            foreach (BossCore c in activeCores)
+            {
+                if (c == null || c.IsDestroyed || hitTargets.Contains(c))
+                    continue;
+
+                Vector3 toCore = c.transform.position - transform.position;
+                float d = toCore.magnitude;
+                if (d < homingSearchRadius * 1.3f && Vector3.Dot(currentDir, toCore.normalized) > 0.1f)
+                {
+                    bestDist = d;
+                    bestTarget = c.transform;
+                }
+            }
+        }
+
+        if (bestTarget != null)
+        {
+            Vector3 desiredDir = (bestTarget.position - transform.position).normalized;
+            Vector3 newDir = Vector3.RotateTowards(currentDir, desiredDir, homingTurnRadiansPerSec * Time.fixedDeltaTime, 0f);
             rb.linearVelocity = newDir * speed;
             transform.rotation = Quaternion.LookRotation(newDir);
+
+            if (bestDist <= magnetSnapRadius)
+            {
+                rb.MovePosition(Vector3.MoveTowards(transform.position, bestTarget.position, speed * Time.fixedDeltaTime));
+            }
         }
     }
 }

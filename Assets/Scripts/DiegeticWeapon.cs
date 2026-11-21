@@ -4,38 +4,54 @@ using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-/// <summary>
-/// Gestiona el disparo 6DOF con salida adelantada fuera de la cabina,
-/// cargador base de 5 balas, fila superior temporal de 5 LEDs y recarga física.
-/// </summary>
 public class DiegeticWeapon : MonoBehaviour
 {
+    public enum PowerUpType
+    {
+        TripleShot,
+        ExpandedMagazine,
+        PiercingShot,
+        HomingShot
+    }
+
     [Header("Configuración de Munición")]
     public int baseMagazineSize = 5;
     private int currentMaxAmmo;
     private int currentAmmo;
     private bool isLocked = false;
 
-    [Header("Acoplamiento Automático en Base")]
+    [Header("Acoplamiento y Recarga Automática en Base")]
     public bool returnToDockWhenReleased = true;
+    public bool autoRechargeOnDockReturn = true;
     public float returnSpeed = 8f;
+    public float dockSnapDistance = 0.035f;
     private Vector3 initialLocalPosition;
     private Quaternion initialLocalRotation;
 
     [Header("Disparo y Proyectiles")]
     public GameObject bulletPrefab;
     public Transform muzzlePoint;
-    [Tooltip("Distancia adelantada desde el cañón para que la bala nazca fuera de la cabina.")]
     public float muzzleForwardOffset = 1.1f;
     public float bulletSpeed = 160f;
     public float fireCooldown = 0.15f;
     private float lastFireTime;
     private float lastRechargeTime = -2f;
 
-    [Header("Potenciadores Activos")]
+    [Header("Asistencia de Apuntado (Aim Assist)")]
+    [Tooltip("Activa una corrección suave dentro de un cono estrecho para facilitar acertar a los núcleos del Boss.")]
+    public bool enableAimAssist = true;
+    [Range(0f, 15f)]
+    public float aimAssistConeAngle = 6.5f;
+    public float aimAssistRange = 95f;
+    [Range(0f, 1f)]
+    public float aimAssistStrength = 0.75f;
+
+    [Header("Potenciadores Activos (Solo lectura en ejecución)")]
     public bool hasTripleShot = false;
     public bool hasPiercingShot = false;
     public bool hasHomingShot = false;
+    public float powerUpDurationSeconds = 10f;
+    private float powerUpExpireTime = 0f;
 
     [Header("Indicadores LED Físicos")]
     public Renderer[] ammoLeds;
@@ -56,6 +72,9 @@ public class DiegeticWeapon : MonoBehaviour
 
     public int RechargesCount { get; private set; } = 0;
 
+    public bool HasExpandedMagazine => currentMaxAmmo > baseMagazineSize;
+    public bool HasAnyPowerUpActive => hasTripleShot || hasPiercingShot || hasHomingShot || HasExpandedMagazine;
+
     private void Awake()
     {
         grabInteractable = GetComponent<XRGrabInteractable>();
@@ -64,6 +83,10 @@ public class DiegeticWeapon : MonoBehaviour
 
         initialLocalPosition = transform.localPosition;
         initialLocalRotation = transform.localRotation;
+
+        hasTripleShot = false;
+        hasPiercingShot = false;
+        hasHomingShot = false;
 
         currentMaxAmmo = baseMagazineSize;
         currentAmmo = currentMaxAmmo;
@@ -88,6 +111,17 @@ public class DiegeticWeapon : MonoBehaviour
         {
             transform.localPosition = Vector3.Lerp(transform.localPosition, initialLocalPosition, Time.deltaTime * returnSpeed);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, initialLocalRotation, Time.deltaTime * returnSpeed);
+
+            // Al soltar la pistola y llegar de vuelta a su base, se recarga automáticamente
+            if (autoRechargeOnDockReturn && Vector3.Distance(transform.localPosition, initialLocalPosition) <= dockSnapDistance)
+            {
+                RechargeWeapon();
+            }
+        }
+
+        if (HasAnyPowerUpActive && Time.time >= powerUpExpireTime)
+        {
+            ClearAllPowerUps("¡POTENCIADOR AGOTADO (10s)!");
         }
 
         if (enableMouseDebug)
@@ -126,6 +160,10 @@ public class DiegeticWeapon : MonoBehaviour
         {
             currentAmmo = 0;
             isLocked = true;
+            if (HasAnyPowerUpActive)
+            {
+                ClearAllPowerUps("¡SIN BALAS! POTENCIADOR PERDIDO");
+            }
         }
 
         SpawnProjectile(muzzlePoint.rotation);
@@ -144,13 +182,25 @@ public class DiegeticWeapon : MonoBehaviour
     {
         if (bulletPrefab == null || muzzlePoint == null) return;
 
-        Vector3 aimDir = rotation * Vector3.forward;
-        // Nace 1.10 m por delante del cañón para salir despejada de la cabina a cualquier velocidad
-        Vector3 spawnPos = muzzlePoint.position + (aimDir * muzzleForwardOffset);
+        Vector3 rawAimDir = rotation * Vector3.forward;
+        Vector3 spawnPos = muzzlePoint.position + (rawAimDir * muzzleForwardOffset);
 
-        GameObject proj = Instantiate(bulletPrefab, spawnPos, rotation);
+        Transform assistedTarget = null;
+        Vector3 finalAimDir = rawAimDir;
 
-        // Ignorar colisiones físicas entre la bala y cualquier pieza de la nave/cabina
+        if (enableAimAssist && aimAssistConeAngle > 0f && aimAssistStrength > 0f)
+        {
+            assistedTarget = FindAimAssistTarget(spawnPos, rawAimDir);
+            if (assistedTarget != null)
+            {
+                Vector3 dirToTarget = (assistedTarget.position - spawnPos).normalized;
+                finalAimDir = Vector3.Slerp(rawAimDir, dirToTarget, aimAssistStrength).normalized;
+            }
+        }
+
+        Quaternion finalRotation = Quaternion.LookRotation(finalAimDir);
+        GameObject proj = Instantiate(bulletPrefab, spawnPos, finalRotation);
+
         Collider bulletCol = proj.GetComponent<Collider>();
         if (bulletCol != null)
         {
@@ -171,10 +221,11 @@ public class DiegeticWeapon : MonoBehaviour
             laser.ignoredRoot = shipFlight != null ? shipFlight.transform : null;
             laser.isPiercing = hasPiercingShot;
             laser.isHoming = hasHomingShot;
+            laser.softAssistTarget = (!hasHomingShot) ? assistedTarget : null;
         }
 
         float shipSpeedZ = shipFlight != null ? shipFlight.CurrentForwardSpeed : 0f;
-        Vector3 finalVelocity = (aimDir * bulletSpeed) + (Vector3.forward * shipSpeedZ);
+        Vector3 finalVelocity = (finalAimDir * bulletSpeed) + (Vector3.forward * shipSpeedZ);
 
         Rigidbody projRb = proj.GetComponent<Rigidbody>();
         if (projRb != null)
@@ -184,6 +235,48 @@ public class DiegeticWeapon : MonoBehaviour
 
         ScoreManager.Instance?.RegisterShotFired();
         Destroy(proj, 2.5f);
+    }
+
+    private Transform FindAimAssistTarget(Vector3 origin, Vector3 forwardDir)
+    {
+        Transform best = null;
+        float bestAngle = aimAssistConeAngle;
+
+        // 1. Prioriza núcleos rojos activos del Dreadnought MK-IV
+        foreach (BossCore core in FindObjectsByType<BossCore>(FindObjectsSortMode.None))
+        {
+            if (core == null || core.IsDestroyed) continue;
+            Vector3 toCore = core.transform.position - origin;
+            float dist = toCore.magnitude;
+            if (dist > aimAssistRange || dist < 0.5f) continue;
+
+            float angle = Vector3.Angle(forwardDir, toCore / dist);
+            if (angle <= bestAngle)
+            {
+                bestAngle = angle;
+                best = core.transform;
+            }
+        }
+
+        if (best != null) return best;
+
+        // 2. Dianas y minas destruibles (ignora asteroides indestructibles)
+        foreach (TargetObjective target in FindObjectsByType<TargetObjective>(FindObjectsSortMode.None))
+        {
+            if (target == null || target.objectiveType == TargetObjective.ObjectiveType.Asteroid) continue;
+            Vector3 toTarget = target.transform.position - origin;
+            float dist = toTarget.magnitude;
+            if (dist > aimAssistRange || dist < 0.5f) continue;
+
+            float angle = Vector3.Angle(forwardDir, toTarget / dist);
+            if (angle <= bestAngle)
+            {
+                bestAngle = angle;
+                best = target.transform;
+            }
+        }
+
+        return best;
     }
 
     public void RefundAmmo()
@@ -200,35 +293,75 @@ public class DiegeticWeapon : MonoBehaviour
     {
         if (Time.time - lastRechargeTime < 0.8f) return;
 
-        bool needsRecharge = isLocked || currentAmmo < currentMaxAmmo;
+        bool needsRecharge = isLocked || currentAmmo < currentMaxAmmo || HasAnyPowerUpActive;
         if (!needsRecharge) return;
 
         lastRechargeTime = Time.time;
+        RechargesCount++;
+
+        ClearAllPowerUps(null);
+
         currentMaxAmmo = baseMagazineSize;
         currentAmmo = currentMaxAmmo;
         isLocked = false;
-        RechargesCount++;
-
-        hasTripleShot = false;
-        hasPiercingShot = false;
-        hasHomingShot = false;
 
         PlaySound(rechargeClip, 1f);
         SendHaptic(0.8f, 0.2f);
         UpdateAmmoLeds();
     }
 
-    public void ActivateExpandedMagazine()
+    public void ActivatePowerUp(PowerUpType type)
     {
-        currentMaxAmmo = 10;
-        currentAmmo = 10;
-        isLocked = false;
+        powerUpExpireTime = Time.time + powerUpDurationSeconds;
+
+        switch (type)
+        {
+            case PowerUpType.TripleShot:
+                hasTripleShot = true;
+                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO TRIPLE (10s)!", Color.cyan);
+                break;
+            case PowerUpType.ExpandedMagazine:
+                currentMaxAmmo = 10;
+                currentAmmo = 10;
+                isLocked = false;
+                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: CARGADOR 10 BALAS (10s)!", Color.cyan);
+                break;
+            case PowerUpType.PiercingShot:
+                hasPiercingShot = true;
+                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO PERFORANTE (10s)!", Color.cyan);
+                break;
+            case PowerUpType.HomingShot:
+                hasHomingShot = true;
+                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO TELEDIRIGIDO (10s)!", Color.cyan);
+                break;
+        }
+
         UpdateAmmoLeds();
+    }
+
+    public void ClearAllPowerUps(string bannerReason)
+    {
+        hasTripleShot = false;
+        hasPiercingShot = false;
+        hasHomingShot = false;
+
+        if (currentMaxAmmo > baseMagazineSize)
+        {
+            currentMaxAmmo = baseMagazineSize;
+            currentAmmo = Mathf.Min(currentAmmo, baseMagazineSize);
+        }
+
+        UpdateAmmoLeds();
+
+        if (!string.IsNullOrEmpty(bannerReason))
+        {
+            ScoreManager.Instance?.ShowBanner(bannerReason, new Color(1f, 0.55f, 0f), 2.5f);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("ChargingStation") && (grabInteractable == null || grabInteractable.isSelected))
+        if (other.CompareTag("ChargingStation"))
         {
             RechargeWeapon();
         }

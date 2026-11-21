@@ -1,31 +1,27 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-/// <summary>
-/// Almacena las estadísticas de la partida entre escenas sin duplicar el XR Rig.
-/// </summary>
 public static class MatchResultsData
 {
     public static int finalScore = 0;
     public static string finalRank = "F";
+    public static int hullRemaining = 0;
     public static int shieldRemaining = 0;
     public static int targetsDestroyed = 0;
+    public static int rechargesCount = 0;
     public static float accuracyPercent = 0f;
     public static string outcomeTitle = "MISIÓN FINALIZADA";
 }
 
-/// <summary>
-/// Orquesta el flujo del Vertical Slice de 3 minutos (180s) dividido en 4 tramos
-/// y redirige a ResultsScene tanto en victoria como en derrota (Diagrama Game Flow GDD).
-/// </summary>
 public class GameFlowManager : MonoBehaviour
 {
     public static GameFlowManager Instance { get; private set; }
 
-    [Header("Configuración de Tiempo (Vertical Slice)")]
-    public float totalMissionDuration = 180f; // 3 minutos exactos
-    public float bossAppearTime = 105f;       // Minuto 1:45
+    [Header("Configuración de Tiempo (GDD: 3:00 Total / Boss 1:45)")]
+    public float totalMissionDuration = 180f;
+    public float bossAppearTime = 105f;
     private float elapsedTime = 0f;
     private int currentTramo = 0;
     private bool missionEnded = false;
@@ -48,11 +44,14 @@ public class GameFlowManager : MonoBehaviour
 
     [Header("Zona de Aparición en el Corredor")]
     public float leadTimeSeconds = 4.5f;
-    public Vector2 spawnRangeX = new Vector2(-7f, 7f);
-    public Vector2 spawnRangeY = new Vector2(-2f, 5f);
+    public bool syncBoundsWithShip = true;
+    public Vector2 spawnRangeX = new Vector2(-7.5f, 7.5f);
+    public Vector2 spawnRangeY = new Vector2(-4.0f, 5.0f);
 
-    private float nextSpawnTime = 1.5f;
-    private float nextPowerUpTime = 16f;
+    private float nextSpawnTime = 1.0f;
+    private float nextPowerUpTime = 14f;
+
+    private static readonly float[] CorridorLanesX = { -6.5f, -3.25f, 0f, 3.25f, 6.5f };
 
     private void Awake()
     {
@@ -62,10 +61,26 @@ public class GameFlowManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        totalMissionDuration = 180f;
+        bossAppearTime = 105f;
     }
 
     private void Start()
     {
+        if (syncBoundsWithShip && flightController != null && shipTransform != null)
+        {
+            Vector3 shipStart = shipTransform.position;
+            spawnRangeX = new Vector2(
+                shipStart.x + flightController.movementBoundsX.x + 0.5f,
+                shipStart.x + flightController.movementBoundsX.y - 0.5f
+            );
+            spawnRangeY = new Vector2(
+                shipStart.y + flightController.movementBoundsY.x,
+                shipStart.y + flightController.movementBoundsY.y
+            );
+        }
+
         EnterTramo(1);
     }
 
@@ -76,35 +91,32 @@ public class GameFlowManager : MonoBehaviour
         elapsedTime += Time.deltaTime;
         UpdateTimerHUD();
 
-        // 1. Condición de Derrota por escudo a 0% -> Pantalla Final con Rango F
         if (ScoreManager.Instance != null && ScoreManager.Instance.currentHealth <= 0)
         {
             EndMission("DERROTA: NAVE DESTRUIDA", false);
             return;
         }
 
-        // 2. Condición de Derrota por tiempo agotado sin destruir al Boss -> Pantalla Final con Rango F
         if (elapsedTime >= totalMissionDuration)
         {
             EndMission("DERROTA: TIEMPO AGOTADO", false);
             return;
         }
 
-        // 3. Control de Tramos según cronómetro del GDD
         if (elapsedTime < 30f)
         {
             if (currentTramo != 1) EnterTramo(1);
-            HandleSpawning(2.2f, 1);
+            HandlePopulatedSpawning(1.9f, 1);
         }
         else if (elapsedTime < 75f)
         {
             if (currentTramo != 2) EnterTramo(2);
-            HandleSpawning(1.7f, 2);
+            HandlePopulatedSpawning(1.5f, 2);
         }
         else if (elapsedTime < bossAppearTime)
         {
             if (currentTramo != 3) EnterTramo(3);
-            HandleSpawning(1.3f, 3);
+            HandlePopulatedSpawning(1.2f, 3);
         }
         else
         {
@@ -132,61 +144,101 @@ public class GameFlowManager : MonoBehaviour
         }
     }
 
-    private void HandleSpawning(float baseInterval, int tramo)
+    private void HandlePopulatedSpawning(float baseInterval, int tramo)
     {
         if (shipTransform == null) return;
 
+        int tier = GameSettingsData.DifficultyTier;
+
+        float[] intervalMults = { 1.15f, 0.95f, 0.78f, 0.62f };
+        int[] minObjectsPerWave = { 1, 2, 3, 4 };
+        int[] maxObjectsPerWave = { 2, 3, 4, 5 };
+        float[] hazardRatioBoost = { -0.08f, 0.05f, 0.18f, 0.30f };
+
         if (Time.time >= nextPowerUpTime && powerUpPrefab != null)
         {
-            SpawnAtRandomLane(powerUpPrefab);
-            nextPowerUpTime = Time.time + 18f;
+            SpawnAtSpecificX(powerUpPrefab, Random.Range(-4.5f, 4.5f), Random.Range(spawnRangeY.x + 0.5f, spawnRangeY.y - 0.5f), 0f);
+            nextPowerUpTime = Time.time + 16f;
         }
 
         if (Time.time < nextSpawnTime) return;
-        nextSpawnTime = Time.time + baseInterval;
+        nextSpawnTime = Time.time + (baseInterval * intervalMults[tier]);
 
-        GameObject prefabToSpawn = bronzeTargetPrefab;
+        int spawnCount = Random.Range(minObjectsPerWave[tier], maxObjectsPerWave[tier] + 1);
+        List<int> availableLanes = new List<int> { 0, 1, 2, 3, 4 };
+        float midY = (spawnRangeY.x + spawnRangeY.y) * 0.5f;
+
+        for (int i = 0; i < spawnCount && availableLanes.Count > 0; i++)
+        {
+            int pickIdx = Random.Range(0, availableLanes.Count);
+            int lane = availableLanes[pickIdx];
+            availableLanes.RemoveAt(pickIdx);
+
+            bool forceTarget = (i == 0 && tramo == 1);
+            GameObject prefab = forceTarget
+                ? bronzeTargetPrefab
+                : PickPrefabForTramo(tramo, hazardRatioBoost[tier]);
+
+            if (prefab != null)
+            {
+                float laneX = Mathf.Clamp(CorridorLanesX[lane] + Random.Range(-0.8f, 0.8f), spawnRangeX.x, spawnRangeX.y);
+                float laneY = (i % 2 == 1)
+                    ? Random.Range(spawnRangeY.x, midY)
+                    : Random.Range(spawnRangeY.x, spawnRangeY.y);
+
+                float zOffset = i * 3.5f;
+                SpawnAtSpecificX(prefab, laneX, laneY, zOffset);
+            }
+        }
+
+        if (asteroidPrefab != null && tier >= 1)
+        {
+            float side = Random.value < 0.5f ? -11.5f : 11.5f;
+            SpawnAtSpecificX(asteroidPrefab, side, Random.Range(spawnRangeY.x, spawnRangeY.y + 1f), Random.Range(2f, 10f));
+        }
+    }
+
+    private GameObject PickPrefabForTramo(int tramo, float hazardBoost)
+    {
         float roll = Random.value;
 
         if (tramo == 1)
         {
-            if (roll < 0.80f || asteroidPrefab == null) prefabToSpawn = bronzeTargetPrefab;
-            else prefabToSpawn = asteroidPrefab;
+            float hazardChance = Mathf.Clamp(0.22f + hazardBoost, 0.08f, 0.65f);
+            if (roll < hazardChance)
+            {
+                return (Random.value < 0.7f && asteroidPrefab != null) ? asteroidPrefab : minePrefab;
+            }
+            return bronzeTargetPrefab;
         }
         else if (tramo == 2)
         {
-            if (roll < 0.45f) prefabToSpawn = silverTargetPrefab;
-            else if (roll < 0.72f && asteroidPrefab != null) prefabToSpawn = asteroidPrefab;
-            else if (roll < 0.90f && minePrefab != null) prefabToSpawn = minePrefab;
-            else prefabToSpawn = bronzeTargetPrefab;
+            float hazardChance = Mathf.Clamp(0.45f + hazardBoost, 0.20f, 0.78f);
+            if (roll < hazardChance)
+            {
+                return (Random.value < 0.55f && asteroidPrefab != null) ? asteroidPrefab : minePrefab;
+            }
+            return (Random.value < 0.65f && silverTargetPrefab != null) ? silverTargetPrefab : bronzeTargetPrefab;
         }
-        else if (tramo == 3)
+        else
         {
-            if (roll < 0.35f) prefabToSpawn = goldTargetPrefab;
-            else if (roll < 0.65f) prefabToSpawn = silverTargetPrefab;
-            else if (roll < 0.85f && asteroidPrefab != null) prefabToSpawn = asteroidPrefab;
-            else prefabToSpawn = minePrefab;
-        }
-
-        if (prefabToSpawn != null)
-        {
-            SpawnAtRandomLane(prefabToSpawn);
+            float hazardChance = Mathf.Clamp(0.48f + hazardBoost, 0.25f, 0.80f);
+            if (roll < hazardChance)
+            {
+                return (Random.value < 0.50f && asteroidPrefab != null) ? asteroidPrefab : minePrefab;
+            }
+            return (Random.value < 0.50f && goldTargetPrefab != null) ? goldTargetPrefab : silverTargetPrefab;
         }
     }
 
-    private void SpawnAtRandomLane(GameObject prefab)
+    private void SpawnAtSpecificX(GameObject prefab, float xPos, float yPos, float extraZ)
     {
         float currentSpeed = flightController != null ? Mathf.Max(flightController.forwardSpeed, 2f) : 15f;
 
-        float dynamicSpawnDist = Mathf.Clamp(currentSpeed * leadTimeSeconds, 32f, 130f);
+        float dynamicSpawnDist = Mathf.Clamp(currentSpeed * leadTimeSeconds, 34f, 130f) + extraZ;
         float dynamicLifetime = (dynamicSpawnDist + 25f) / currentSpeed;
 
-        Vector3 spawnPos = new Vector3(
-            Random.Range(spawnRangeX.x, spawnRangeX.y),
-            Random.Range(spawnRangeY.x, spawnRangeY.y),
-            shipTransform.position.z + dynamicSpawnDist
-        );
-
+        Vector3 spawnPos = new Vector3(xPos, yPos, shipTransform.position.z + dynamicSpawnDist);
         GameObject obj = Instantiate(prefab, spawnPos, prefab.transform.rotation);
         Destroy(obj, dynamicLifetime);
     }
@@ -202,11 +254,16 @@ public class GameFlowManager : MonoBehaviour
             flightController.spawnTunnelMarkers = false;
         }
 
+        foreach (TargetObjective leftover in FindObjectsByType<TargetObjective>(FindObjectsSortMode.None))
+        {
+            if (leftover != null) Destroy(leftover.gameObject);
+        }
+
         ScoreManager.Instance?.ShowBanner("¡ALERTA DE JEFE: DREADNOUGHT MK-IV!", Color.red, 4.5f);
 
         if (bossDreadnoughtPrefab != null && shipTransform != null)
         {
-            Vector3 bossPos = new Vector3(0f, 1.5f, shipTransform.position.z + 55f);
+            Vector3 bossPos = new Vector3(0f, 1.0f, shipTransform.position.z + 55f);
             GameObject bossObj = Instantiate(bossDreadnoughtPrefab, bossPos, Quaternion.identity);
             BossDreadnought bossScript = bossObj.GetComponent<BossDreadnought>();
             if (bossScript != null)
@@ -234,6 +291,7 @@ public class GameFlowManager : MonoBehaviour
         {
             MatchResultsData.finalScore = ScoreManager.Instance.currentScore;
             MatchResultsData.finalRank = isVictory ? ScoreManager.Instance.CalculateFinalRank() : "F";
+            MatchResultsData.hullRemaining = ScoreManager.Instance.currentHealth;
             MatchResultsData.shieldRemaining = ScoreManager.Instance.currentHealth;
             MatchResultsData.targetsDestroyed = ScoreManager.Instance.targetsDestroyed;
 
@@ -241,6 +299,9 @@ public class GameFlowManager : MonoBehaviour
             int hits = ScoreManager.Instance.totalShotsHit;
             MatchResultsData.accuracyPercent = fired > 0 ? ((float)hits / fired) * 100f : 0f;
         }
+
+        DiegeticWeapon weapon = FindFirstObjectByType<DiegeticWeapon>();
+        MatchResultsData.rechargesCount = weapon != null ? weapon.RechargesCount : 0;
 
         MatchResultsData.outcomeTitle = outcome;
         Invoke(nameof(LoadResultsScene), 2.5f);

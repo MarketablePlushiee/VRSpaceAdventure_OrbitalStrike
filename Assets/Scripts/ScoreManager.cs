@@ -1,10 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using TMPro;
 
-/// <summary>
-/// Gestiona el puntaje (con multiplicador de combo y dificultad), integridad del escudo
-/// y cálculo del rango final (F a SS).
-/// </summary>
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
@@ -27,7 +24,17 @@ public class ScoreManager : MonoBehaviour
     public TMP_Text healthText;
     public TMP_Text powerUpBannerText;
 
+    [Header("Feedback de Impacto en Cabina (GDD 5.5 / 8.2)")]
+    [Tooltip("Arrastra aquí Cockpit_Greybox para sacudir la estructura sin marear la cámara VR.")]
+    public Transform cockpitToShake;
+    public float shakeDuration = 0.22f;
+    public float shakeMagnitude = 0.045f;
+    public AudioSource shipAudioSource;
+    public AudioClip hullDamageClip;
+
     private float bannerClearTime;
+    private Vector3 initialCockpitLocalPos;
+    private Coroutine shakeCoroutine;
 
     private void Awake()
     {
@@ -39,6 +46,14 @@ public class ScoreManager : MonoBehaviour
         Instance = this;
         currentHealth = maxHealth;
         UpdateHUD();
+    }
+
+    private void Start()
+    {
+        if (cockpitToShake != null)
+        {
+            initialCockpitLocalPos = cockpitToShake.localPosition;
+        }
     }
 
     private void Update()
@@ -82,8 +97,33 @@ public class ScoreManager : MonoBehaviour
     {
         currentHealth = Mathf.Clamp(currentHealth - amount, 0, maxHealth);
         BreakCombo();
-        ShowBanner($"¡IMPACTO! -{amount}% ESCUDO", Color.red, 3f);
+        ShowBanner($"¡IMPACTO! -{amount}% CASCO", Color.red, 3f);
+
+        if (shipAudioSource != null && hullDamageClip != null)
+        {
+            shipAudioSource.PlayOneShot(hullDamageClip);
+        }
+
+        if (cockpitToShake != null)
+        {
+            if (shakeCoroutine != null) StopCoroutine(shakeCoroutine);
+            shakeCoroutine = StartCoroutine(ShakeCockpitRoutine(shakeDuration, shakeMagnitude));
+        }
+
         UpdateHUD();
+    }
+
+    private IEnumerator ShakeCockpitRoutine(float duration, float magnitude)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            cockpitToShake.localPosition = initialCockpitLocalPos + (Random.insideUnitSphere * magnitude);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        cockpitToShake.localPosition = initialCockpitLocalPos;
+        shakeCoroutine = null;
     }
 
     public void ShowBanner(string message, Color textColor, float duration = 3f)
@@ -103,7 +143,7 @@ public class ScoreManager : MonoBehaviour
     {
         if (scoreText != null) scoreText.text = $"PUNTOS: {currentScore:N0}";
         if (comboText != null) comboText.text = $"COMBO: x{comboMultiplier} ({GameSettingsData.scoreMultiplier:0.##}x)";
-        if (healthText != null) healthText.text = $"ESCUDO: {currentHealth}%";
+        if (healthText != null) healthText.text = $"CASCO: {currentHealth}%";
     }
 
     public string CalculateFinalRank()
@@ -112,15 +152,25 @@ public class ScoreManager : MonoBehaviour
         DiegeticWeapon weapon = FindFirstObjectByType<DiegeticWeapon>();
         int recharges = weapon != null ? weapon.RechargesCount : 0;
 
-        int accuracyBonus = Mathf.RoundToInt(accuracy * 25f);
-        int shieldBonus = currentHealth * 15;
+        int accuracyBonus = Mathf.RoundToInt(accuracy * 30f);
+        int hullBonus = currentHealth * 20;
         int rechargePenalty = Mathf.Min(recharges * 250, 2000);
-        int finalEvaluation = currentScore + accuracyBonus + shieldBonus - rechargePenalty;
+        int finalEvaluation = currentScore + accuracyBonus + hullBonus - rechargePenalty;
 
-        if (finalEvaluation >= 22000) return "SS";
-        if (finalEvaluation >= 15500) return "S";
-        if (finalEvaluation >= 11000) return "A";
-        if (finalEvaluation >= 7500) return "B";
-        return "C";
+        int tier = GameSettingsData.DifficultyTier;
+        int[] ssReq = { 90000, 150000, 240000, 350000 };
+        int[] sReq = { 55000, 95000, 150000, 220000 };
+        int[] aReq = { 30000, 55000, 85000, 125000 };
+        int[] bReq = { 15000, 28000, 45000, 65000 };
+        int[] cReq = { 7000, 12000, 20000, 30000 };
+        int[] dReq = { 3000, 5000, 8500, 13000 };
+
+        if (finalEvaluation >= ssReq[tier]) return "SS";
+        if (finalEvaluation >= sReq[tier]) return "S";
+        if (finalEvaluation >= aReq[tier]) return "A";
+        if (finalEvaluation >= bReq[tier]) return "B";
+        if (finalEvaluation >= cReq[tier]) return "C";
+        if (finalEvaluation >= dReq[tier]) return "D";
+        return "E";
     }
 }

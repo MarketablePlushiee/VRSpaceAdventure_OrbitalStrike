@@ -29,8 +29,11 @@ public class TargetObjective : MonoBehaviour
     public float moveAmplitude = 2.5f;
     public float moveFrequency = 1.5f;
 
-    [Header("Efecto Visual (Opcional)")]
+    [Header("Efecto Visual y Audio 3D (GDD 8.2)")]
     public GameObject destructionVfxPrefab;
+    public AudioClip destroySfxClip;
+    [Range(0f, 1f)]
+    public float destroySfxVolume = 0.85f;
 
     private int currentHealth;
     private Vector3 initialPosition;
@@ -111,6 +114,11 @@ public class TargetObjective : MonoBehaviour
             ApplyUniquePowerUp(weapon);
         }
 
+        if (destroySfxClip != null)
+        {
+            AudioSource.PlayClipAtPoint(destroySfxClip, transform.position, destroySfxVolume);
+        }
+
         if (destructionVfxPrefab != null)
         {
             GameObject vfx = Instantiate(destructionVfxPrefab, transform.position, Quaternion.identity);
@@ -122,41 +130,22 @@ public class TargetObjective : MonoBehaviour
 
     private void ApplyUniquePowerUp(DiegeticWeapon weapon)
     {
-        List<int> available = new List<int>();
-        if (!weapon.hasTripleShot) available.Add(0);
-        if (weapon.extraAmmoLeds == null || weapon.extraAmmoLeds.Length == 0 || !weapon.extraAmmoLeds[0].gameObject.activeSelf)
-            available.Add(1);
-        if (!weapon.hasPiercingShot) available.Add(2);
-        if (!weapon.hasHomingShot) available.Add(3);
+        List<DiegeticWeapon.PowerUpType> available = new List<DiegeticWeapon.PowerUpType>();
+        if (!weapon.hasTripleShot) available.Add(DiegeticWeapon.PowerUpType.TripleShot);
+        if (!weapon.HasExpandedMagazine) available.Add(DiegeticWeapon.PowerUpType.ExpandedMagazine);
+        if (!weapon.hasPiercingShot) available.Add(DiegeticWeapon.PowerUpType.PiercingShot);
+        if (!weapon.hasHomingShot) available.Add(DiegeticWeapon.PowerUpType.HomingShot);
 
         if (available.Count == 0)
         {
-            weapon.ActivateExpandedMagazine();
+            weapon.ActivatePowerUp(DiegeticWeapon.PowerUpType.ExpandedMagazine);
             ScoreManager.Instance?.AddScore(1000, false);
-            ScoreManager.Instance?.ShowBanner("¡SOBRECARGA MÁXIMA! +1.000 PTS Y 10 BALAS", Color.yellow);
+            ScoreManager.Instance?.ShowBanner("¡SOBRECARGA MÁXIMA! +1.000 PTS Y 10s EXTRA", Color.yellow);
             return;
         }
 
-        int chosen = available[Random.Range(0, available.Count)];
-        switch (chosen)
-        {
-            case 0:
-                weapon.hasTripleShot = true;
-                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO TRIPLE!", Color.cyan);
-                break;
-            case 1:
-                weapon.ActivateExpandedMagazine();
-                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: CARGADOR EXPANDIDO (10 BALAS)!", Color.cyan);
-                break;
-            case 2:
-                weapon.hasPiercingShot = true;
-                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO PERFORANTE!", Color.cyan);
-                break;
-            case 3:
-                weapon.hasHomingShot = true;
-                ScoreManager.Instance?.ShowBanner("¡POTENCIADOR: DISPARO TELEDERIGIDO!", Color.cyan);
-                break;
-        }
+        DiegeticWeapon.PowerUpType chosen = available[Random.Range(0, available.Count)];
+        weapon.ActivatePowerUp(chosen);
     }
 
     private void OnTriggerEnter(Collider other)

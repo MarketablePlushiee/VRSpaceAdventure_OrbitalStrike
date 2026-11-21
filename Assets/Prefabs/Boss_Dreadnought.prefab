@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5053523190672262754}
   - component: {fileID: 8020567471852981192}
   - component: {fileID: 4320993229329160824}
-  - component: {fileID: 6260854711987486959}
+  - component: {fileID: 1018785428993632726}
   m_Layer: 0
   m_Name: Core_2
   m_TagString: Untagged
@@ -113,7 +113,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &6260854711987486959
+--- !u!114 &1018785428993632726
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -122,18 +122,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 218606666898251130}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
+  m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
-  objectiveType: 2
-  basePoints: 1000
-  maxHealth: 3
-  hullDamageOnCrash: 20
-  oscillate: 0
-  moveAxis: {x: 1, y: 0, z: 0}
-  moveAmplitude: 2.5
-  moveFrequency: 1.5
-  destructionVfxPrefab: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::BossCore
+  maxCoreHealth: 250
+  damagePerLaserHit: 50
+  bonusPointsOnDestroy: 500
 --- !u!1 &3014689493239811670
 GameObject:
   m_ObjectHideFlags: 0
@@ -258,7 +252,7 @@ GameObject:
   - component: {fileID: 6249228699624082983}
   - component: {fileID: 6698033528381576789}
   - component: {fileID: 4302873557342614996}
-  - component: {fileID: 1714383499084398503}
+  - component: {fileID: 6108904519544507456}
   m_Layer: 0
   m_Name: Core_1
   m_TagString: Untagged
@@ -359,7 +353,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1714383499084398503
+--- !u!114 &6108904519544507456
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -368,18 +362,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 4843346456543274859}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
+  m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
-  objectiveType: 2
-  basePoints: 1000
-  maxHealth: 3
-  hullDamageOnCrash: 20
-  oscillate: 0
-  moveAxis: {x: 1, y: 0, z: 0}
-  moveAmplitude: 2.5
-  moveFrequency: 1.5
-  destructionVfxPrefab: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::BossCore
+  maxCoreHealth: 250
+  damagePerLaserHit: 50
+  bonusPointsOnDestroy: 500
 --- !u!1 &6591737639278414870
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,7 +380,7 @@ GameObject:
   - component: {fileID: 5675289677605677974}
   - component: {fileID: 5451571609147188455}
   - component: {fileID: 8477060192865024109}
-  - component: {fileID: 791389807203187954}
+  - component: {fileID: 5747105264766803262}
   m_Layer: 0
   m_Name: Core_4
   m_TagString: Untagged
@@ -493,7 +481,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &791389807203187954
+--- !u!114 &5747105264766803262
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -502,18 +490,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 6591737639278414870}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
+  m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
-  objectiveType: 2
-  basePoints: 1000
-  maxHealth: 3
-  hullDamageOnCrash: 20
-  oscillate: 0
-  moveAxis: {x: 1, y: 0, z: 0}
-  moveAmplitude: 2.5
-  moveFrequency: 1.5
-  destructionVfxPrefab: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::BossCore
+  maxCoreHealth: 250
+  damagePerLaserHit: 50
+  bonusPointsOnDestroy: 500
 --- !u!1 &7071821844003148731
 GameObject:
   m_ObjectHideFlags: 0
@@ -540,7 +522,7 @@ Transform:
   m_GameObject: {fileID: 7071821844003148731}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.62592, y: 0, z: 10.50266}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -563,17 +545,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d6f0aefb6f3e56429d2867b98eb54ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossDreadnought
-  hoverDistanceZ: 52
-  swayAmplitudeX: 5.5
-  swayAmplitudeY: 2.2
-  swaySpeed: 0.9
-  weakPointCores:
-  - {fileID: 1714383499084398503}
-  - {fileID: 6260854711987486959}
-  - {fileID: 5759187386442787513}
-  - {fileID: 791389807203187954}
-  mineAttackInterval: 5.5
-  mineProjectileSpeed: 24
+  distanceAheadZ: 52
+  horizontalRange: 8.5
+  verticalRange: 3.2
+  baseMoveSpeed: 1.4
+  baseAttackInterval: 4
+  projectileSpeed: 24
+  attackPrefab: {fileID: 7529666565326096621, guid: ddcb55e31b5400244afea97ea9bcd8c4, type: 3}
 --- !u!1 &7722944412220339585
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,7 +564,7 @@ GameObject:
   - component: {fileID: 69000327862274508}
   - component: {fileID: 3172499423107158094}
   - component: {fileID: 371750371739746878}
-  - component: {fileID: 5759187386442787513}
+  - component: {fileID: 4623579733582974348}
   m_Layer: 0
   m_Name: Core_3
   m_TagString: Untagged
@@ -687,7 +665,7 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5759187386442787513
+--- !u!114 &4623579733582974348
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -696,15 +674,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7722944412220339585}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
+  m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
-  objectiveType: 2
-  basePoints: 1000
-  maxHealth: 3
-  hullDamageOnCrash: 20
-  oscillate: 0
-  moveAxis: {x: 1, y: 0, z: 0}
-  moveAmplitude: 2.5
-  moveFrequency: 1.5
-  destructionVfxPrefab: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::BossCore
+  maxCoreHealth: 250
+  damagePerLaserHit: 50
+  bonusPointsOnDestroy: 500

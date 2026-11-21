@@ -3,20 +3,27 @@ using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-/// <summary>
-/// Guarda la dificultad, velocidad y multiplicador de puntos elegidos en el Hangar.
-/// </summary>
 public static class GameSettingsData
 {
     public static string difficultyName = "NORMAL";
     public static float selectedForwardSpeed = 15f;
     public static float scoreMultiplier = 1.0f;
+
+    /// <summary>
+    /// 0 = Fácil, 1 = Normal, 2 = Difícil, 3 = Imposible
+    /// </summary>
+    public static int DifficultyTier
+    {
+        get
+        {
+            if (selectedForwardSpeed <= 10f) return 0;
+            if (selectedForwardSpeed <= 17f) return 1;
+            if (selectedForwardSpeed <= 24f) return 2;
+            return 3;
+        }
+    }
 }
 
-/// <summary>
-/// Controla el avance constante sobre el riel (eje Z) y la esquiva lateral/vertical (ejes X/Y)
-/// mediante movimiento kinemático físico (rb.MovePosition).
-/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class ShipFlightController : MonoBehaviour
 {
@@ -37,8 +44,13 @@ public class ShipFlightController : MonoBehaviour
     public float handSensitivityRadius = 0.08f;
     public float deadzone = 0.012f;
 
-    [Header("Referencias Visuales de Velocidad (Prototipo)")]
+    [Header("Pilares / Arcos de Referencia en el Camino")]
     public bool spawnTunnelMarkers = true;
+    [Tooltip("Opcional: arrastra aquí el Prefab 3D del pilar o arco orbital. Si está vacío, usa cubos de prototipo.")]
+    public GameObject tunnelPillarPrefab;
+    [Tooltip("Si es true, crea un pilar a la izquierda y otro a la derecha. Desmárcalo si el prefab es un arco completo centrado.")]
+    public bool mirrorPillarBothSides = true;
+    public Vector3 fallbackPillarScale = new Vector3(1.2f, 18f, 1.2f);
     public float markerSpacingZ = 25f;
     public float markerLookAheadZ = 120f;
     public bool enableKeyboardDebug = true;
@@ -50,6 +62,7 @@ public class ShipFlightController : MonoBehaviour
     private Vector3 grabOriginLocal;
     private bool wasGrabbed = false;
     private float nextMarkerZ = 20f;
+    private Quaternion initialPivotLocalRotation = Quaternion.identity;
 
     public float CurrentForwardSpeed => isBossPhase ? forwardSpeed * 0.5f : forwardSpeed;
 
@@ -66,6 +79,21 @@ public class ShipFlightController : MonoBehaviour
         if (useSelectedDifficultySpeed)
         {
             forwardSpeed = GameSettingsData.selectedForwardSpeed;
+        }
+
+        if (joystickInteractable != null)
+        {
+            if (joystickPivot == null || !joystickInteractable.transform.IsChildOf(joystickPivot))
+            {
+                joystickPivot = joystickInteractable.transform.parent != null && joystickInteractable.transform.parent != transform
+                    ? joystickInteractable.transform.parent
+                    : joystickInteractable.transform;
+            }
+        }
+
+        if (joystickPivot != null)
+        {
+            initialPivotLocalRotation = joystickPivot.localRotation;
         }
     }
 
@@ -139,8 +167,8 @@ public class ShipFlightController : MonoBehaviour
     {
         if (joystickPivot == null) return;
 
-        Quaternion targetRot = Quaternion.Euler(smoothedInput.y * maxTiltAngle, 0f, -smoothedInput.x * maxTiltAngle);
-        joystickPivot.localRotation = Quaternion.Slerp(joystickPivot.localRotation, targetRot, Time.deltaTime * 15f);
+        Quaternion tiltOffset = Quaternion.Euler(smoothedInput.y * maxTiltAngle, 0f, -smoothedInput.x * maxTiltAngle);
+        joystickPivot.localRotation = Quaternion.Slerp(joystickPivot.localRotation, initialPivotLocalRotation * tiltOffset, Time.deltaTime * 15f);
     }
 
     private void UpdateTunnelMarkers()
@@ -152,18 +180,39 @@ public class ShipFlightController : MonoBehaviour
 
         while (transform.position.z + markerLookAheadZ > nextMarkerZ)
         {
-            CreatePillar(new Vector3(startPosition.x - 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
-            CreatePillar(new Vector3(startPosition.x + 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+            if (mirrorPillarBothSides)
+            {
+                SpawnPillarInstance(new Vector3(startPosition.x - 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+                SpawnPillarInstance(new Vector3(startPosition.x + 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+            }
+            else
+            {
+                SpawnPillarInstance(new Vector3(startPosition.x, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+            }
+
             nextMarkerZ += markerSpacingZ;
         }
     }
 
-    private void CreatePillar(Vector3 pos, float lifetime)
+    private void SpawnPillarInstance(Vector3 pos, float lifetime)
     {
-        GameObject pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Destroy(pillar.GetComponent<Collider>());
-        pillar.transform.position = pos;
-        pillar.transform.localScale = new Vector3(1.2f, 18f, 1.2f);
+        GameObject pillar;
+        if (tunnelPillarPrefab != null)
+        {
+            pillar = Instantiate(tunnelPillarPrefab, pos, tunnelPillarPrefab.transform.rotation);
+            foreach (Collider col in pillar.GetComponentsInChildren<Collider>())
+            {
+                Destroy(col);
+            }
+        }
+        else
+        {
+            pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(pillar.GetComponent<Collider>());
+            pillar.transform.position = pos;
+            pillar.transform.localScale = fallbackPillarScale;
+        }
+
         Destroy(pillar, lifetime);
     }
 }

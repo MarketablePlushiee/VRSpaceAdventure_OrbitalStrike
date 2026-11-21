@@ -153,6 +153,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b536e66851132f3459f132d3c65a3a77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LaserProjectile
+  ownerWeapon: {fileID: 0}
+  ignoredRoot: {fileID: 0}
+  softAssistTarget: {fileID: 0}
   isPiercing: 0
   isHoming: 0
-  homingTurnSpeed: 8
+  homingTurnRadiansPerSec: 10
+  homingSearchRadius: 80
+  magnetSnapRadius: 2
+  hitRadius: 0.2
