@@ -158,7 +158,7 @@ MonoBehaviour:
   softAssistTarget: {fileID: 0}
   isPiercing: 0
   isHoming: 0
-  homingTurnRadiansPerSec: 10
-  homingSearchRadius: 80
-  magnetSnapRadius: 2
-  hitRadius: 0.2
+  homingTurnRadiansPerSec: 8
+  homingSearchRadius: 60
+  magnetSnapRadius: 1
+  hitRadius: 0.1

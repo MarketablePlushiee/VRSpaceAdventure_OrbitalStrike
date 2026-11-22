@@ -4509,9 +4509,9 @@ MonoBehaviour:
   bulletSpeed: 90
   fireCooldown: 0.15
   enableAimAssist: 1
-  aimAssistConeAngle: 2
-  aimAssistRange: 50
-  aimAssistStrength: 0.2
+  aimAssistConeAngle: 1
+  aimAssistRange: 20
+  aimAssistStrength: 0.1
   hasTripleShot: 0
   hasPiercingShot: 0
   hasHomingShot: 0
