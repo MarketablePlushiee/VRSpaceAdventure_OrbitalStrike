@@ -4294,9 +4294,14 @@ MonoBehaviour:
   spawnTunnelMarkers: 1
   tunnelPillarPrefab: {fileID: 0}
   mirrorPillarBothSides: 1
+  pillarSideOffsetX: 22
+  tunnelMarkerOffset: {x: 0, y: 2, z: 0}
   fallbackPillarScale: {x: 1.2, y: 18, z: 1.2}
   markerSpacingZ: 25
   markerLookAheadZ: 120
+  firstMarkerZ: 35
+  tunnelMarkersCastShadows: 0
+  tunnelMarkersReceiveShadows: 0
   enableKeyboardDebug: 1
 --- !u!4 &1671173044
 Transform:
@@ -4426,7 +4431,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Cerrrar Programa
+  m_text: Cerrar Programa
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5306,9 +5311,33 @@ MonoBehaviour:
   asteroidPrefab: {fileID: 0}
   bossDreadnoughtPrefab: {fileID: 7071821844003148731, guid: a8bf97c7c62b20d40988280bd3735f8d, type: 3}
   leadTimeSeconds: 4.5
+  minSpawnDistanceZ: 105
   syncBoundsWithShip: 1
+  spawnBoundsMargin: {x: 1.5, y: 1}
   spawnRangeX: {x: -7, y: 7}
   spawnRangeY: {x: -2, y: 5}
+  corridorLaneCount: 7
+  spawnIntervalMultiplier: 0.8
+  extraObjectsPerWave: 2
+  waveZSpacing: 4.5
+  movingObjectChance: 0.35
+  spawnAmbientSideAsteroids: 1
+  ambientAsteroidOuterOffsetX: 4.5
+  bossPowerUpInterval: 16
+  bossPowerUpDistanceZ: 34
+  bossPowerUpDuration: 11
+  tunnelSkybox: {fileID: 0}
+  bossSpaceSkybox: {fileID: 0}
+  controlNebulaFog: 1
+  normalFogColor: {r: 0.14, g: 0.06, b: 0.21, a: 1}
+  stormFogColor: {r: 0.25, g: 0.07, b: 0.35, a: 1}
+  normalFogStart: 35
+  normalFogEnd: 95
+  stormFogStart: 2
+  stormFogEnd: 10
+  bossFogEnd: 90
+  warningLeadSeconds: 6
+  bossAlarmClip: {fileID: 0}
 --- !u!114 &1986926981
 MonoBehaviour:
   m_ObjectHideFlags: 0
