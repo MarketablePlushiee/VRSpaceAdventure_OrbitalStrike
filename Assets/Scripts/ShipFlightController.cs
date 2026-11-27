@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
@@ -9,9 +11,6 @@ public static class GameSettingsData
     public static float selectedForwardSpeed = 15f;
     public static float scoreMultiplier = 1.0f;
 
-    /// <summary>
-    /// 0 = Fácil, 1 = Normal, 2 = Difícil, 3 = Imposible
-    /// </summary>
     public static int DifficultyTier
     {
         get
@@ -33,26 +32,33 @@ public class ShipFlightController : MonoBehaviour
     public bool isBossPhase = false;
 
     [Header("Maniobra Evasiva (Ejes X / Y)")]
-    public float strafeSpeed = 14f;
-    public Vector2 movementBoundsX = new Vector2(-12f, 12f);
-    public Vector2 movementBoundsY = new Vector2(-6f, 10f);
+    public float strafeSpeed = 18f;
+    public Vector2 movementBoundsX = new Vector2(-20f, 20f);
+    public Vector2 movementBoundsY = new Vector2(-10f, 15f);
 
     [Header("Referencias del Joystick VR (Mano Izquierda)")]
     public XRBaseInteractable joystickInteractable;
     public Transform joystickPivot;
-    public float maxTiltAngle = 28f;
-    public float handSensitivityRadius = 0.08f;
-    public float deadzone = 0.012f;
+    public float maxTiltAngle = 30f;
+    public float handSensitivityRadius = 0.1f;
+    public float deadzone = 0.015f;
 
     [Header("Pilares / Arcos de Referencia en el Camino")]
     public bool spawnTunnelMarkers = true;
-    [Tooltip("Opcional: arrastra aquí el Prefab 3D del pilar o arco orbital. Si está vacío, usa cubos de prototipo.")]
     public GameObject tunnelPillarPrefab;
-    [Tooltip("Si es true, crea un pilar a la izquierda y otro a la derecha. Desmárcalo si el prefab es un arco completo centrado.")]
-    public bool mirrorPillarBothSides = true;
+    public bool mirrorPillarBothSides = false;
+    public float pillarSideOffsetX = 22f;
+    public Vector3 tunnelMarkerOffset = new Vector3(0f, 2f, 0f);
     public Vector3 fallbackPillarScale = new Vector3(1.2f, 18f, 1.2f);
-    public float markerSpacingZ = 25f;
+    public float markerSpacingZ = 55f;
     public float markerLookAheadZ = 120f;
+    public float firstMarkerZ = 35f;
+
+    [Header("Sombras de los Anillos / Arcos")]
+    public bool tunnelMarkersCastShadows = false;
+    public bool tunnelMarkersReceiveShadows = false;
+
+    [Header("Depuración en Editor")]
     public bool enableKeyboardDebug = true;
 
     private Rigidbody rb;
@@ -61,8 +67,9 @@ public class ShipFlightController : MonoBehaviour
     private Vector3 startPosition;
     private Vector3 grabOriginLocal;
     private bool wasGrabbed = false;
-    private float nextMarkerZ = 20f;
+    private float nextMarkerZ;
     private Quaternion initialPivotLocalRotation = Quaternion.identity;
+    private readonly List<GameObject> activeTunnelMarkers = new List<GameObject>();
 
     public float CurrentForwardSpeed => isBossPhase ? forwardSpeed * 0.5f : forwardSpeed;
 
@@ -72,6 +79,7 @@ public class ShipFlightController : MonoBehaviour
         rb.isKinematic = true;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         startPosition = transform.position;
+        nextMarkerZ = startPosition.z + firstMarkerZ;
     }
 
     private void Start()
@@ -115,8 +123,13 @@ public class ShipFlightController : MonoBehaviour
         );
 
         Vector3 nextPos = rb.position + displacement;
-        nextPos.x = Mathf.Clamp(nextPos.x, startPosition.x + movementBoundsX.x, startPosition.x + movementBoundsX.y);
-        nextPos.y = Mathf.Clamp(nextPos.y, startPosition.y + movementBoundsY.x, startPosition.y + movementBoundsY.y);
+        float minX = Mathf.Min(movementBoundsX.x, movementBoundsX.y);
+        float maxX = Mathf.Max(movementBoundsX.x, movementBoundsX.y);
+        float minY = Mathf.Min(movementBoundsY.x, movementBoundsY.y);
+        float maxY = Mathf.Max(movementBoundsY.x, movementBoundsY.y);
+
+        nextPos.x = Mathf.Clamp(nextPos.x, startPosition.x + minX, startPosition.x + maxX);
+        nextPos.y = Mathf.Clamp(nextPos.y, startPosition.y + minY, startPosition.y + maxY);
 
         rb.MovePosition(nextPos);
     }
@@ -175,22 +188,29 @@ public class ShipFlightController : MonoBehaviour
     {
         if (!spawnTunnelMarkers) return;
 
+        float safeSpacing = Mathf.Max(5f, markerSpacingZ);
         float activeSpeed = Mathf.Max(CurrentForwardSpeed, 2f);
-        float dynamicLifetime = (markerLookAheadZ + 30f) / activeSpeed;
+        float dynamicLifetime = (markerLookAheadZ + 40f) / activeSpeed;
 
         while (transform.position.z + markerLookAheadZ > nextMarkerZ)
         {
+            Vector3 basePos = new Vector3(
+                startPosition.x + tunnelMarkerOffset.x,
+                startPosition.y + tunnelMarkerOffset.y,
+                nextMarkerZ + tunnelMarkerOffset.z
+            );
+
             if (mirrorPillarBothSides)
             {
-                SpawnPillarInstance(new Vector3(startPosition.x - 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
-                SpawnPillarInstance(new Vector3(startPosition.x + 14f, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+                SpawnPillarInstance(basePos + Vector3.left * pillarSideOffsetX, dynamicLifetime);
+                SpawnPillarInstance(basePos + Vector3.right * pillarSideOffsetX, dynamicLifetime);
             }
             else
             {
-                SpawnPillarInstance(new Vector3(startPosition.x, startPosition.y + 2f, nextMarkerZ), dynamicLifetime);
+                SpawnPillarInstance(basePos, dynamicLifetime);
             }
 
-            nextMarkerZ += markerSpacingZ;
+            nextMarkerZ += safeSpacing;
         }
     }
 
@@ -200,7 +220,7 @@ public class ShipFlightController : MonoBehaviour
         if (tunnelPillarPrefab != null)
         {
             pillar = Instantiate(tunnelPillarPrefab, pos, tunnelPillarPrefab.transform.rotation);
-            foreach (Collider col in pillar.GetComponentsInChildren<Collider>())
+            foreach (Collider col in pillar.GetComponentsInChildren<Collider>(true))
             {
                 Destroy(col);
             }
@@ -213,6 +233,26 @@ public class ShipFlightController : MonoBehaviour
             pillar.transform.localScale = fallbackPillarScale;
         }
 
+        foreach (Renderer rend in pillar.GetComponentsInChildren<Renderer>(true))
+        {
+            rend.shadowCastingMode = tunnelMarkersCastShadows ? ShadowCastingMode.On : ShadowCastingMode.Off;
+            rend.receiveShadows = tunnelMarkersReceiveShadows;
+        }
+
+        activeTunnelMarkers.RemoveAll(item => item == null);
+        activeTunnelMarkers.Add(pillar);
         Destroy(pillar, lifetime);
+    }
+
+    public void ClearAllTunnelMarkers()
+    {
+        for (int i = 0; i < activeTunnelMarkers.Count; i++)
+        {
+            if (activeTunnelMarkers[i] != null)
+            {
+                Destroy(activeTunnelMarkers[i]);
+            }
+        }
+        activeTunnelMarkers.Clear();
     }
 }

@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 534303429938710949}
   - component: {fileID: 3476326839916118965}
   - component: {fileID: 7401328161317288429}
-  - component: {fileID: 8228828360078137555}
   - component: {fileID: 5232598218512089780}
+  - component: {fileID: 8764277531672424675}
   m_Layer: 0
   m_Name: Target_PowerUp
   m_TagString: Untagged
@@ -28,13 +28,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6521976267041201201}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.35355338, y: 0.35355338, z: -0.1464466, w: 0.8535535}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.27459, y: 1, z: -0.39353}
-  m_LocalScale: {x: 1.1, y: 1.11, z: 1.1}
+  m_LocalScale: {x: 75, y: 75, z: 75}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 45, y: 45, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3476326839916118965
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6521976267041201201}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -2636911220111241711, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &7401328161317288429
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8bdc0862375addd4eb81e4cb7e5f542e, type: 2}
+  - {fileID: 2100000, guid: a50c48e3fe0bd5d4e89a0c11409221a7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,8 +92,33 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &8228828360078137555
-BoxCollider:
+--- !u!114 &5232598218512089780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6521976267041201201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
+  objectiveType: 3
+  basePoints: 300
+  maxHealth: 1
+  hullDamageOnCrash: 20
+  ephemeralDurationInRange: 0
+  activationDistanceZ: 45
+  oscillate: 0
+  moveAxis: {x: 1, y: 0, z: 0}
+  moveAmplitude: 2.5
+  moveFrequency: 1.5
+  destructionVfxPrefab: {fileID: 0}
+  destroySfxClip: {fileID: 0}
+  destroySfxVolume: 0.85
+--- !u!135 &8764277531672424675
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -111,26 +136,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.4, y: 1.4, z: 1.4}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5232598218512089780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6521976267041201201}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6dbeccc2e3a1bed40b29096f66f5804f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TargetObjective
-  objectiveType: 3
-  basePoints: 300
-  maxHealth: 1
-  hullDamageOnCrash: 20
-  oscillate: 0
-  moveAxis: {x: 1, y: 0, z: 0}
-  moveAmplitude: 2.5
-  moveFrequency: 1.5
-  destructionVfxPrefab: {fileID: 0}
+  m_Radius: 0.010000001
+  m_Center: {x: 0, y: 0, z: 0.000000029802322}

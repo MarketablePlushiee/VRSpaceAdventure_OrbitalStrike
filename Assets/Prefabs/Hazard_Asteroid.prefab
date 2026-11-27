@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.27459, y: 1, z: -0.39353}
-  m_LocalScale: {x: 2.4, y: 2, z: 2.6}
+  m_LocalScale: {x: 55, y: 55, z: 55}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7529666565326096621}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -5222094085584606113, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &2849969037393825338
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -111,8 +111,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.04528698
+  m_Center: {x: 0.0000000037252903, y: 0, z: 0}
 --- !u!114 &333840457600703952
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -128,7 +128,7 @@ MonoBehaviour:
   objectiveType: 5
   basePoints: 1000
   maxHealth: 100
-  hullDamageOnCrash: 20
+  hullDamageOnCrash: 25
   ephemeralDurationInRange: 0
   activationDistanceZ: 45
   oscillate: 0
@@ -136,3 +136,5 @@ MonoBehaviour:
   moveAmplitude: 2.5
   moveFrequency: 1.5
   destructionVfxPrefab: {fileID: 0}
+  destroySfxClip: {fileID: 0}
+  destroySfxVolume: 0.85

@@ -14,19 +14,19 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
-  m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_Fog: 1
+  m_FogColor: {r: 0.13725491, g: 0.0627451, b: 0.21176471, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
-  m_LinearFogStart: 0
-  m_LinearFogEnd: 300
+  m_LinearFogStart: 35
+  m_LinearFogEnd: 95
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 5593e2730cc1a844da42e17536b4311c, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 52275019619bdab438c81e4567d0792a, type: 2}
   m_LightingSettings: {fileID: 0}
 --- !u!196 &4
 NavMeshSettings:
@@ -1032,7 +1032,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -1784,7 +1784,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -2033,7 +2033,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -2205,19 +2205,24 @@ MonoBehaviour:
   forwardSpeed: 20
   isBossPhase: 0
   strafeSpeed: 14
-  movementBoundsX: {x: -8, y: 8}
-  movementBoundsY: {x: -4, y: 5}
+  movementBoundsX: {x: -20, y: 20}
+  movementBoundsY: {x: -10, y: 15}
   joystickInteractable: {fileID: 354026658}
   joystickPivot: {fileID: 87680976}
   maxTiltAngle: 30
   handSensitivityRadius: 0.1
   deadzone: 0.015
   spawnTunnelMarkers: 1
-  tunnelPillarPrefab: {fileID: 0}
-  mirrorPillarBothSides: 1
+  tunnelPillarPrefab: {fileID: 7033824785081496476, guid: e4030bc8ee7a5214f813daa22a1f9c9e, type: 3}
+  mirrorPillarBothSides: 0
+  pillarSideOffsetX: 22
+  tunnelMarkerOffset: {x: 0, y: 2, z: 0}
   fallbackPillarScale: {x: 1.2, y: 18, z: 1.2}
-  markerSpacingZ: 25
+  markerSpacingZ: 55
   markerLookAheadZ: 120
+  firstMarkerZ: 35
+  tunnelMarkersCastShadows: 0
+  tunnelMarkersReceiveShadows: 0
   enableKeyboardDebug: 1
 --- !u!1 &805243857
 GameObject:
@@ -2708,7 +2713,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -3241,9 +3246,30 @@ MonoBehaviour:
   asteroidPrefab: {fileID: 7529666565326096621, guid: 788b55cf61ffc5240a7a31b9c9d025dd, type: 3}
   bossDreadnoughtPrefab: {fileID: 7071821844003148731, guid: a8bf97c7c62b20d40988280bd3735f8d, type: 3}
   leadTimeSeconds: 4.5
+  minSpawnDistanceZ: 105
   syncBoundsWithShip: 1
+  spawnBoundsMargin: {x: 1.5, y: 1}
   spawnRangeX: {x: -7, y: 7}
   spawnRangeY: {x: -2, y: 5}
+  corridorLaneCount: 7
+  spawnIntervalMultiplier: 1
+  extraObjectsPerWave: 3
+  waveZSpacing: 4.5
+  movingObjectChance: 0.35
+  spawnAmbientSideAsteroids: 1
+  ambientAsteroidOuterOffsetX: 4.5
+  tunnelSkybox: {fileID: 2100000, guid: d14f8322310e2de4295d69bfdadd07cc, type: 2}
+  bossSpaceSkybox: {fileID: 2100000, guid: 5593e2730cc1a844da42e17536b4311c, type: 2}
+  controlNebulaFog: 1
+  normalFogColor: {r: 0.14, g: 0.06, b: 0.21, a: 1}
+  stormFogColor: {r: 0.25, g: 0.07, b: 0.35, a: 1}
+  normalFogStart: 35
+  normalFogEnd: 95
+  stormFogStart: 2
+  stormFogEnd: 10
+  bossFogEnd: 90
+  warningLeadSeconds: 6
+  bossAlarmClip: {fileID: 0}
 --- !u!1 &1430903742
 GameObject:
   m_ObjectHideFlags: 0
@@ -4509,9 +4535,9 @@ MonoBehaviour:
   bulletSpeed: 90
   fireCooldown: 0.15
   enableAimAssist: 1
-  aimAssistConeAngle: 1
-  aimAssistRange: 20
-  aimAssistStrength: 0.1
+  aimAssistConeAngle: 3
+  aimAssistRange: 40
+  aimAssistStrength: 0.3
   hasTripleShot: 0
   hasPiercingShot: 0
   hasHomingShot: 0
@@ -5091,7 +5117,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 4
   m_VerticalAlignment: 256
   m_textAlignment: 65535

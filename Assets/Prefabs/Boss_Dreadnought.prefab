@@ -29,8 +29,8 @@ Transform:
   m_GameObject: {fileID: 218606666898251130}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 1.5, z: -4}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
+  m_LocalPosition: {x: -6.1, y: -5, z: 9.6}
+  m_LocalScale: {x: 85, y: 85, z: 85}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4062762184210033034}
@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 218606666898251130}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 2756529127424957367, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &8020567471852981192
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -111,8 +111,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.03149781
+  m_Center: {x: 0.24318625, y: -0.09335231, z: -0.18456732}
 --- !u!114 &1018785428993632726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125,9 +125,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossCore
-  maxCoreHealth: 250
+  scaleHealthByDifficulty: 1
+  easyCoreHealth: 100
+  normalCoreHealth: 200
+  hardCoreHealth: 300
+  impossibleCoreHealth: 400
   damagePerLaserHit: 50
   bonusPointsOnDestroy: 500
+  coreDestroySfxClip: {fileID: 0}
+  coreDestroySfxVolume: 1
 --- !u!1 &3014689493239811670
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,7 +145,6 @@ GameObject:
   - component: {fileID: 5725760078327337412}
   - component: {fileID: 7691450304378482098}
   - component: {fileID: 6988011689708307505}
-  - component: {fileID: 1532962181598048988}
   m_Layer: 0
   m_Name: Hull_Body
   m_TagString: Untagged
@@ -155,13 +160,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3014689493239811670}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 14, y: 4, z: 8}
+  m_LocalScale: {x: 60, y: 60, z: 60}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4062762184210033034}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!33 &7691450304378482098
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -169,7 +174,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3014689493239811670}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -2215328934451603722, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &6988011689708307505
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -195,7 +200,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ff2e12fd6ecbf3e4a9ce12c93a23356e, type: 2}
+  - {fileID: 2100000, guid: 4c45c6dd1af212e41b6799f8c3633646, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -219,27 +224,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1532962181598048988
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3014689493239811670}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &4843346456543274859
 GameObject:
   m_ObjectHideFlags: 0
@@ -269,8 +253,8 @@ Transform:
   m_GameObject: {fileID: 4843346456543274859}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5, y: 1.5, z: -4}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
+  m_LocalPosition: {x: -35.3, y: 19, z: -24.2}
+  m_LocalScale: {x: 85, y: 85, z: 85}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4062762184210033034}
@@ -282,7 +266,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4843346456543274859}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 8769973596570753825, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &6698033528381576789
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -351,8 +335,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.031497814
+  m_Center: {x: 0.24318627, y: -0.09335232, z: 0.21541853}
 --- !u!114 &6108904519544507456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,9 +349,127 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossCore
-  maxCoreHealth: 250
+  scaleHealthByDifficulty: 1
+  easyCoreHealth: 100
+  normalCoreHealth: 200
+  hardCoreHealth: 300
+  impossibleCoreHealth: 400
   damagePerLaserHit: 50
   bonusPointsOnDestroy: 500
+  coreDestroySfxClip: {fileID: 0}
+  coreDestroySfxVolume: 1
+--- !u!1 &4961457578594850901
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5816102632381367250}
+  - component: {fileID: 7322333550558497031}
+  - component: {fileID: 8697351058334527139}
+  - component: {fileID: 7697703176593800941}
+  m_Layer: 0
+  m_Name: Shield
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5816102632381367250
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4961457578594850901}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.11, z: 0.27}
+  m_LocalScale: {x: 62, y: 62, z: 62}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4062762184210033034}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!33 &7322333550558497031
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4961457578594850901}
+  m_Mesh: {fileID: -4812372780564916017, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
+--- !u!23 &8697351058334527139
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4961457578594850901}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 4c45c6dd1af212e41b6799f8c3633646, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &7697703176593800941
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4961457578594850901}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.50842226, y: 0, z: 0.42170462}
+  m_Center: {x: 0, y: -0.09408651, z: 0.01460569}
 --- !u!1 &6591737639278414870
 GameObject:
   m_ObjectHideFlags: 0
@@ -397,8 +499,8 @@ Transform:
   m_GameObject: {fileID: 6591737639278414870}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: -1.5, z: -4}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
+  m_LocalPosition: {x: 35.3, y: 19, z: -24.2}
+  m_LocalScale: {x: 85, y: 85, z: 85}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4062762184210033034}
@@ -410,7 +512,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6591737639278414870}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 8275225954756008856, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &5451571609147188455
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -479,8 +581,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.03149781
+  m_Center: {x: -0.24318625, y: -0.09335231, z: 0.21541852}
 --- !u!114 &5747105264766803262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -493,9 +595,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossCore
-  maxCoreHealth: 250
+  scaleHealthByDifficulty: 1
+  easyCoreHealth: 100
+  normalCoreHealth: 200
+  hardCoreHealth: 300
+  impossibleCoreHealth: 400
   damagePerLaserHit: 50
   bonusPointsOnDestroy: 500
+  coreDestroySfxClip: {fileID: 0}
+  coreDestroySfxVolume: 1
 --- !u!1 &7071821844003148731
 GameObject:
   m_ObjectHideFlags: 0
@@ -531,6 +639,7 @@ Transform:
   - {fileID: 3800442223225727334}
   - {fileID: 2947445395205132083}
   - {fileID: 8320108572713454239}
+  - {fileID: 5816102632381367250}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2278282318414358513
@@ -546,12 +655,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossDreadnought
   distanceAheadZ: 52
-  horizontalRange: 8.5
-  verticalRange: 3.2
-  baseMoveSpeed: 1.4
-  baseAttackInterval: 4
-  projectileSpeed: 24
+  horizontalRange: 13.5
+  verticalRange: 5.5
+  baseMoveSpeed: 1.5
+  postVolleySlowDuration: 1.4
+  postVolleyMoveMultiplier: 0.35
+  coreBreakStaggerDuration: 1.2
+  baseAttackInterval: 3.4
+  projectileSpeed: 22
   attackPrefab: {fileID: 7529666565326096621, guid: ddcb55e31b5400244afea97ea9bcd8c4, type: 3}
+  secondaryObstaclePrefab: {fileID: 7529666565326096621, guid: ddcb55e31b5400244afea97ea9bcd8c4, type: 3}
+  asteroidRatioInVolley: 0.25
+  extraProjectilesPerVolley: 1
+  speedBoostPerDestroyedCore: 0.12
+  fireRateBoostPerDestroyedCore: 0.1
 --- !u!1 &7722944412220339585
 GameObject:
   m_ObjectHideFlags: 0
@@ -581,8 +698,8 @@ Transform:
   m_GameObject: {fileID: 7722944412220339585}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5, y: -1.5, z: -4}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
+  m_LocalPosition: {x: 6.1, y: -5, z: 9.6}
+  m_LocalScale: {x: 85, y: 85, z: 85}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4062762184210033034}
@@ -594,7 +711,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7722944412220339585}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -7864164253414206616, guid: 0dd6564af417d88468c01c84dce90b35, type: 3}
 --- !u!23 &3172499423107158094
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -663,8 +780,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Radius: 0.03149781
+  m_Center: {x: -0.24318625, y: -0.09335231, z: -0.18456732}
 --- !u!114 &4623579733582974348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -677,6 +794,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0466394638d75fb4a8ad08dd073fe77e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossCore
-  maxCoreHealth: 250
+  scaleHealthByDifficulty: 1
+  easyCoreHealth: 100
+  normalCoreHealth: 200
+  hardCoreHealth: 300
+  impossibleCoreHealth: 400
   damagePerLaserHit: 50
   bonusPointsOnDestroy: 500
+  coreDestroySfxClip: {fileID: 0}
+  coreDestroySfxVolume: 1
